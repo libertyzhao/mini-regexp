@@ -21,15 +21,16 @@ class NfaMachine {
     // this.term(nfaPair);
     this.expr(nfaPair);
     this.nfaPair = nfaPair;
-    console.log(`起点：${nfaPair.startNode.statusNumber}`)
-    console.log(`终点：${nfaPair.endNode.statusNumber}`)
-    Print.printNfa(nfaPair.startNode);
+    // console.log(`起点：${nfaPair.startNode.statusNumber}`)
+    // console.log(`终点：${nfaPair.endNode.statusNumber}`)
+    // Print.printNfa(nfaPair.startNode);
   }
   clear() {
     this.nfaCollection.clear();
   }
   // 测试字符串能否通过正则
   test(inputString) {
+    console.log(`输入字符串：${inputString}`)
     this.clear();
     this.nfaCollection.add(this.nfaPair.startNode);
 
