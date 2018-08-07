@@ -1,4 +1,5 @@
 let Lexer = require('./Lexer')
+let Parser = require('./Parser')
 let Input = require('./Input')
 let PreProcess = require('./PreProcess')
 let NfaMachine = require('./NfaMachine');
@@ -6,11 +7,12 @@ let NfaMachine = require('./NfaMachine');
 let preProcess = new PreProcess(`D   [0-9]`);
 let input = new Input();
 let lexer = new Lexer(input);
-let nfaMachine = new NfaMachine(lexer);
+let parser = new Parser(lexer);
+let nfaMachine = new NfaMachine(parser);
 
-let inputString = `(123\\.[a-z])`;
+let inputString = `({D}*\\.{D}|{D}\\.{D}*)`;
 console.log(`输入公式：${inputString}`);
 input.setInput(preProcess.process(inputString));
 
 nfaMachine.run();
-nfaMachine.test(`123.c`);
+nfaMachine.test(`1.2`);
