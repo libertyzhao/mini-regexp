@@ -26,9 +26,52 @@ class NfaMachine {
     // console.log(`终点：${nfaPair.endNode.statusNumber}`)
     // Print.printNfa(nfaPair.startNode);
     this.createTable();
+    // this.processTable()
   }
   clear() {
     this.nfaCollection.clear();
+  }
+  // DFA最小化
+  processTable(){
+    let regionNumber = 1, newTable = [], indexTRegionNumber = {};
+    for(let i = 0 ; i < this.table.length ; i++){
+      let dfaInputList = this.table[i];
+
+      if(dfaInputList.isEnd){
+        dfaInputList.regionNumber = 1
+        newTable[0] = newTable[0] || new Set();
+        newTable[0].isEnd = true;
+        newTable[0].add(i);
+        indexTRegionNumber[i] = 0
+      }else{
+        dfaInputList.regionNumber = 0;
+        newTable[1] = newTable[1] || new Set();
+        newTable[1].add(i);
+        indexTRegionNumber[i] = 1
+      }
+    }
+
+    while(true){
+      let size = newTable.length;
+      for(let i = 0 ; i < this.table.length ; i++){
+        let dfaInputList = this.table[i];
+        for(let j = 0 ; j < dfaInputList.length ; j++){
+          let nextIndex = dfaInputList[j];
+          if(!nextIndex){continue}
+          if(this.table[nextIndex].regionNumber !== dfaInputList.regionNumber && newTable[regionNumber].size > 1){
+            dfaInputList.regionNumber = ++regionNumber;
+            newTable[regionNumber] = newTable[regionNumber] || new Set();
+            newTable[regionNumber].add(i);
+            newTable[indexTRegionNumber[i]].delete(i);
+          }
+        }
+      }
+      if(size === newTable.length){
+        break;
+      }
+    }
+    console.log(newTable);
+
   }
   // 创建该正则的有向图
   createTable() {
@@ -86,7 +129,9 @@ class NfaMachine {
           // 装进图中
           this.table[dfa.statusNumber][key] = newDfa.statusNumber;
           // 如果集合有终点，就给dfa节点设置一个终点
-          if (nextNfaSet.has(this.nfaPair.endNode)) {
+          if (nextNfaSet.has(this.nfaPair.endNode) && !newDfa.isEnd) {
+            this.table[newDfa.statusNumber] = this.table[newDfa.statusNumber] || [];
+            this.table[newDfa.statusNumber].isEnd = true;
             newDfa.setEnd();
           }
         }
