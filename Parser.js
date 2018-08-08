@@ -113,6 +113,7 @@ class Parser{
   // 匹配单个字符，b
   nfaForSingleCharacter(nfaPair) {
       let transformStatus = false;
+    // 处理 \.  这种转义的情况
     if (this.lexer.match(Lexer.TRANSFORM)) {
         this.lexer.advance();
         // transform之后的状态，无视literal
