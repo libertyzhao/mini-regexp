@@ -26,53 +26,109 @@ class NfaMachine {
     // console.log(`终点：${nfaPair.endNode.statusNumber}`)
     // Print.printNfa(nfaPair.startNode);
     this.createTable();
-    // this.processTable()
+    this.processTable();
   }
   clear() {
     this.nfaCollection.clear();
   }
   // DFA最小化
-  processTable(){
-    let regionNumber = 1, newTable = [], indexTRegionNumber = {};
-    for(let i = 0 ; i < this.table.length ; i++){
+  // 就是将dfa数组再分区,先将终点节点看做区域1，非终点节点看做区域0，
+  // 区域0里面的节点接收到字符，如果变成了非本区域的节点，比如从区域0变成区域1的节点，那么给这个节点花个新区域定为区域3，依次类推
+  // 直到发现所有区域都最小不可分为止（即一个区域必须最少要有一个节点）
+  processTable() {
+    let regionNumber = 1,//规定区域0里面是非终结节点，区域1里面是终结节点，所以这里从1开始，下面会++
+      newTable = [], // 该table里面存放的是每个区域里面含有的dfa节点的下标
+      tableNumberToRegion = {};// 每个dfa节点，对应在哪个区域中,方便快速查找
+
+    for (let i = 0; i < this.table.length; i++) {
       let dfaInputList = this.table[i];
 
-      if(dfaInputList.isEnd){
-        dfaInputList.regionNumber = 1
-        newTable[0] = newTable[0] || new Set();
-        newTable[0].isEnd = true;
-        newTable[0].add(i);
-        indexTRegionNumber[i] = 0
-      }else{
-        dfaInputList.regionNumber = 0;
+      if (dfaInputList.isEnd) {
+        dfaInputList.regionNumber = 1;
         newTable[1] = newTable[1] || new Set();
+        newTable[1].isEnd = true;
         newTable[1].add(i);
-        indexTRegionNumber[i] = 1
+        tableNumberToRegion[i] = 1;
+      } else {
+        dfaInputList.regionNumber = 0;
+        newTable[0] = newTable[0] || new Set();
+        newTable[0].add(i);
+        tableNumberToRegion[i] = 0;
       }
     }
 
-    while(true){
+    while (true) {
       let size = newTable.length;
-      for(let i = 0 ; i < this.table.length ; i++){
+      for (let i = 0; i < this.table.length; i++) {
         let dfaInputList = this.table[i];
-        for(let j = 0 ; j < dfaInputList.length ; j++){
-          let nextIndex = dfaInputList[j];
-          if(!nextIndex){continue}
-          if(this.table[nextIndex].regionNumber !== dfaInputList.regionNumber && newTable[regionNumber].size > 1){
-            dfaInputList.regionNumber = ++regionNumber;
-            newTable[regionNumber] = newTable[regionNumber] || new Set();
-            newTable[regionNumber].add(i);
-            newTable[indexTRegionNumber[i]].delete(i);
+        if (dfaInputList.length > 0) {
+          for (let j = 0; j < dfaInputList.length; j++) {
+            let nextIndex = dfaInputList[j];
+            if(!nextIndex){continue}
+            if (
+              this.table[nextIndex].regionNumber !==
+                dfaInputList.regionNumber &&
+              newTable[dfaInputList.regionNumber].size > 1
+            ) {
+              newTable[dfaInputList.regionNumber].delete(i);
+              ++regionNumber;
+              newTable[regionNumber] = newTable[regionNumber] || new Set();
+              newTable[regionNumber].add(i);
+              if(newTable[dfaInputList.regionNumber].isEnd){
+                newTable[regionNumber].isEnd = true;
+              }
+              tableNumberToRegion[i] = regionNumber;
+              dfaInputList.regionNumber = regionNumber;
+            }
           }
+        } else if (newTable[dfaInputList.regionNumber].size > 1) {
+          newTable[dfaInputList.regionNumber].delete(i);
+          ++regionNumber;
+          newTable[regionNumber] = newTable[regionNumber] || new Set();
+          newTable[regionNumber].add(i);
+          if(newTable[dfaInputList.regionNumber].isEnd){
+            newTable[regionNumber].isEnd = true;
+          }
+          tableNumberToRegion[i] = regionNumber;
+          dfaInputList.regionNumber = regionNumber;
         }
       }
-      if(size === newTable.length){
+      if (size === newTable.length) {
         break;
       }
     }
     console.log(newTable);
-
+    this.markTable(newTable, tableNumberToRegion);
   }
+
+  markTable(newTable, tableNumberToRegion){
+    let regionTable = [];
+    for(let i = 0 ; i < newTable.length ; i++){
+      let tableNumberSet = newTable[i];
+      for(let tableNumber of tableNumberSet){
+        let inputToNextTableNumber = this.table[tableNumber];
+        if(inputToNextTableNumber.length > 0){
+          inputToNextTableNumber.forEach((nextTableNumber,input) => {
+            let regionNumber = tableNumberToRegion[nextTableNumber]
+            regionTable[i] = regionTable[i] || [];
+            regionTable[i][input] = regionNumber;
+           })
+        }else{
+          regionTable[i] = regionTable[i] || [];
+        }
+        newTable[i].isEnd && (regionTable[i].isEnd = true)
+      }
+    }
+
+    this.table = regionTable
+    // 打印数组
+    var str = ""
+    regionTable.forEach(item => {
+      str += '[' + item.join(',') + '],' + '\n';
+    })
+    fs.writeFileSync("./table.js",`[${str}]`,'utf-8');
+  }
+
   // 创建该正则的有向图
   createTable() {
     this.clear();
@@ -98,12 +154,7 @@ class NfaMachine {
         }
       }
     }
-    // 打印数组
-    var str = ""
-    this.table.forEach(item => {
-      str += '[' + item.join(',') + '],' + '\n';
-    })
-    fs.writeFileSync("./table.js",`[${str}]`,'utf-8');
+
     // console.log(this.table);
   }
   // 把一个nfa集合转dfa
@@ -176,35 +227,20 @@ class NfaMachine {
     let token,
       status = 0;
 
-    while ((token = this.input.lookAhead(1)) !== Input.EOF) {
-      this.input.advance(1);
-      let code = token.charCodeAt();
-      status = this.table[status][code];
+    try{
+      while ((token = this.input.lookAhead(1)) !== Input.EOF) {
+        this.input.advance(1);
+        let code = token.charCodeAt();
+        status = this.table[status][code];
+      }
+      if (this.table[status].isEnd) {
+        console.log(`通过`);
+      } else {
+        console.log(`不通过`);
+      }
+    }catch(e){
+      console.log('不通过');
     }
-    let dfa = this.dfaCollection.get(status);
-    if (dfa && dfa.isEnd) {
-      console.log(`通过`);
-    } else {
-      console.log(`不通过`);
-    }
-
-    // this.clear();
-    // this.nfaCollection.add(this.nfaPair.startNode);
-
-    // let token;
-
-    // while ((token = this.input.lookAhead(1)) !== Input.EOF) {
-    //   this.input.advance(1);
-    //   this.nfaCollection = this.moveEpsilon(this.nfaCollection);
-    //   this.nfaCollection = this.move(this.nfaCollection, token.charCodeAt());
-    // }
-    // this.nfaCollection = this.moveEpsilon(this.nfaCollection);
-
-    // if (this.nfaCollection.has(this.nfaPair.endNode)) {
-    //   console.log(`通过`);
-    // } else {
-    //   console.log(`不通过`);
-    // }
   }
   // Epsilon边的移动
   moveEpsilon(nfaCollection) {
