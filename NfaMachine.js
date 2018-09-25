@@ -1,10 +1,10 @@
 // 控制器
 
-let NfaPair = require("./NfaPair");
-let Print = require("./Print");
-let Input = require("./Input");
-let TableProcess = require('./TableProcess');
-let fs = require("fs");
+const NfaPair = require("./NfaPair");
+const Print = require("./Print");
+const Input = require("./Input");
+const TableProcess = require('./TableProcess');
+const fs = require("fs");
 
 class NfaMachine {
   constructor(parser) {
@@ -17,7 +17,7 @@ class NfaMachine {
   run() {
     let nfaPair = new NfaPair();
     // this.term(nfaPair);
-    // 汤姆森构造法
+    // 汤姆森构造法，构造出一个有向图
     this.parser.expr(nfaPair);
     this.nfaPair = nfaPair;
     // console.log(`起点：${nfaPair.startNode.statusNumber}`)

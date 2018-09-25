@@ -1,6 +1,6 @@
 //预处理，提前替换掉输入里面的宏内容
 
-let Input = require("./Input");
+const Input = require("./Input");
 
 class PreProcess {
   constructor(macroString) {
@@ -8,7 +8,7 @@ class PreProcess {
     this.macroInput.setInput(macroString);
     this.macroHash = this.initMacro();
   }
-  // 初始化宏哈希表
+  // 初始化宏哈希表，将宏字符串里面的key value拿出来，放到hash表里面
   initMacro() {
     let key,
       hash = {},
@@ -22,20 +22,22 @@ class PreProcess {
     return hash;
   }
 
-  process(content) {
+  // 进行匹配替换
+  process(inputString) {
     // 最多10次
     let max = 10;
+    let content = inputString;
     // 尽量用循环代替递归
     while (true) {
       max--;
-      let input = new Input();
+      const input = new Input();
       input.setInput(content);
 
       let token,
         leftBracketIndex = 0, // 记录左括号的位置
         processString = content,
         processEnd = true; // 是否预处理结束
-
+      // 如果下一个字符不是eof，那么继续
       while ((token = input.lookAhead(1)) !== Input.EOF) {
         input.advance(1);
         leftBracketIndex++;
@@ -72,7 +74,7 @@ class PreProcess {
       }
     }
 
-    console.log('宏替换后：' + content);
+    console.log("宏替换后：" + content);
     return content;
   }
 }

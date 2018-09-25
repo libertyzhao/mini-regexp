@@ -1,9 +1,11 @@
-// 语法分析，里面是简单的正则匹配，复杂的正则匹配其实也是简单的正则匹配合起来的
+// 语法分析，手写的一个简单的自顶向下的语法解析，里面是简单的正则匹配，复杂的正则匹配其实也是简单的正则匹配合起来的
+// 注意ll(1) 不允许左递归
+// 语法分析的同时，构建出一个有向图nfaPair
 
-let NfaManage = require("./NfaManage");
-let Nfa = require("./Nfa");
-let Lexer = require("./Lexer");
-let NfaPair = require("./NfaPair");
+const NfaManage = require("./NfaManage");
+const Nfa = require("./Nfa");
+const Lexer = require("./Lexer");
+const NfaPair = require("./NfaPair");
 
 class Parser{
   constructor(lexer){
@@ -104,7 +106,7 @@ class Parser{
       if (this.lexer.match(Lexer.CLOSE_PAREN)) {
         this.lexer.advance();
       } else {
-        throw Error(`expected ), but got this.lexer.symbol`);
+        throw Error(`expected ), but got ${this.lexer.symbol}`);
       }
       return true;
     }

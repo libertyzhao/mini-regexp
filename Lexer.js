@@ -1,6 +1,7 @@
 const ASCII_COUNT = 128;
-let Input = require("./Input");
+const Input = require("./Input");
 
+// 分词
 class Lexer {
   constructor(input) {
     this.tokenMap = new Array(ASCII_COUNT);
@@ -27,6 +28,7 @@ class Lexer {
   get symbol() {
     return this.input.symbol;
   }
+  // 获取后面一个token的符号类型
   lex() {
     let token = this.input.lookAhead(this.step);
     if (token === Lexer.EOF) {
@@ -42,6 +44,7 @@ class Lexer {
     this.nextWordType = this.tokenMap[token];
     return this.nextWordType || Lexer.LITERAL;
   }
+  // 看一下是否存在转移符号
   handleTransform() {
     let token = this.input.lookAhead(2);
 
@@ -65,6 +68,7 @@ class Lexer {
     }
     return token.charCodeAt();
   }
+  // 匹配后面符号，看看是不是自己想要的
   match(token) {
     if (this.nextWordType === -1) {
       this.nextWordType = this.lex();

@@ -17,9 +17,10 @@ class Input {
     if (this.startBuf === "") {
       return Input.EOF;
     }
-    let token = this.startBuf.slice(0, i);
+    const token = this.startBuf.slice(0, i);
     return token;
   }
+  // 向前移动i个位置
   advance(i) {
     this.startBuf = this.startBuf.slice(i);
   }
@@ -46,7 +47,6 @@ class Input {
   skipSpace() {
     let index = 0,
       spaceSize = 0,
-      ignoreSpaceSize = false,
       character = this.startBuf[index];
     while (character === " " || character === "\n") {
       if (character === "\n") {
