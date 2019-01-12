@@ -3,23 +3,8 @@
 const Input = require("./Input");
 
 class PreProcess {
-  constructor(macroString) {
-    this.macroInput = new Input();
-    this.macroInput.setInput(macroString);
-    this.macroHash = this.initMacro();
-  }
-  // 初始化宏哈希表，将宏字符串里面的key value拿出来，放到hash表里面
-  initMacro() {
-    let key,
-      hash = {},
-      value;
-    while ((key = this.macroInput.lookAheadToken()) !== Input.EOF) {
-      this.macroInput.advance(key.length);
-      value = this.macroInput.lookAheadToken() || "";
-      this.macroInput.advance(value.length);
-      hash[key] = value;
-    }
-    return hash;
+  constructor(macroHash) {
+    this.macroHash = macroHash;
   }
 
   // 进行匹配替换
@@ -34,35 +19,28 @@ class PreProcess {
       input.setInput(content);
 
       let token,
-        leftBracketIndex = 0, // 记录左括号的位置
+        targetPositionIndex = 0, // 记录转义符号的位置
         processString = content,
         processEnd = true; // 是否预处理结束
       // 如果下一个字符不是eof，那么继续
       while ((token = input.lookAhead(1)) !== Input.EOF) {
         input.advance(1);
-        leftBracketIndex++;
-        // 如果有左括号
-        if (token === "{") {
-          let macroWord = ""; // 记录内容
-          // 遍历括号里面的宏内容
-          while ((token = input.lookAhead(1)) !== Input.EOF) {
-            input.advance(1);
-            if (token === "}") {
-              break;
-            }
-            macroWord += token;
-          }
+        targetPositionIndex++;
+        // 如果有转义符号
+        if(token === "\\"){
+          let macroWord = input.lookAhead(1); // 记录后一位的内容
+          input.advance(1);
           let val = this.macroHash[macroWord];
-          // 如果是以右括号结尾，并且在哈希表里面找得到宏对应的值，说明是个正常的宏
-          if (token === "}" && val !== undefined) {
-            processEnd = false; // 只要有左右括号，那么这一轮搜索完了必须进行下一轮的搜索,防止宏嵌套
+          // 如果哈希表里面找得到宏对应的值，说明是个正常的宏
+          if (val !== undefined) {
+            processEnd = false; // 搜索完了必须进行下一轮的搜索,防止宏嵌套
             // 重新构造宏替换之后的字符串
             processString =
-              processString.slice(0, leftBracketIndex - 1) +
+              processString.slice(0, targetPositionIndex - 1) +
               val +
-              processString.slice(leftBracketIndex + 1 + macroWord.length);
+              processString.slice(targetPositionIndex + macroWord.length);
             // 加上替换内容的长度
-            leftBracketIndex += val.length - 1;
+            targetPositionIndex += val.length - 1;
           }
         }
       }

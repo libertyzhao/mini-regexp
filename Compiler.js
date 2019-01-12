@@ -4,17 +4,18 @@ let Input = require('./Input')
 let PreProcess = require('./PreProcess')
 let NfaMachine = require('./NfaMachine');
 
-let preProcess = new PreProcess(`D   [0-9]`);
+// 配置宏 \d  ->  [0-9]
+let preProcess = new PreProcess({d: '[0-9]'});
 let input = new Input();
 let lexer = new Lexer(input);
 let parser = new Parser(lexer);
 let nfaMachine = new NfaMachine(parser);
 
-let regexp = `(a+)*s`;
+let regexp = `[A-Z]+\\d+(.*):(.*)+[A-Z]+\\d+`;
 console.log(`输入公式：${regexp}`);
 input.setInput(preProcess.process(regexp));
 
-let str = `aaaaaaaaaaaaaaaaaaaaaaaaaaaaa`
+let str = `A1:B$1,C$1:D$1,E$1:F$1,G$1:H$1`
 
 nfaMachine.run();
 let start = Date.now();
