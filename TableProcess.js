@@ -69,7 +69,7 @@ class TableProcess {
         break;
       }
     }
-    console.log(newTable);
+    // console.log(newTable);
     // 将分区表转换成区域的有向图
     this.table = this.transformTable(newTable, dfaToRegion)
     return this.table;
